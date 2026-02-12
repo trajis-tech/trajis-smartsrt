@@ -112,7 +112,7 @@ In the UI, select the scheme from the **Run F scheme** dropdown. Options: `full`
 
 - Glossary → optional strip_punctuation (keep_decimal, keep_acronym) → `item.translated_text`. **name_mappings**: from Phase2 name_translations + PACK transliteration_requests (fill missing with empty translated).
 
-**Run E config summary**
+**Run F config summary**
 
 | Setting | Default | Description |
 |---------|---------|-------------|
@@ -207,7 +207,7 @@ Create and use this folder layout:
 ```
 models/
   main/     ← Main reasoning model (Run B); one or more .gguf files
-  local/    ← Localization / translation model (Run E); one or more .gguf files
+  local/    ← Localization / translation model (Run F); one or more .gguf files
   vision/   ← Optional vision model (Run C/D); main .gguf + mmproj .gguf
   audio/    ← Run A audio model (downloaded by install script or on first run)
 ```
@@ -252,12 +252,12 @@ Key fields:
 - `vision.enabled`: optional vision fallback
 - `pipeline.n_frames`: number of frames for multi-frame vision (default: `3`)
 - `pipeline.work_dir`: directory for intermediate results (default: `./work/`)
-- `pipeline.run_e_scheme`: Run E scheme — `"full"` | `"main_led"` | `"local_led"` | `"draft_first"` (default: `"full"`). See **Run E schemes** above.
-- `pipeline.local_polish_chunk_size`: lines per chunk for Run E local_polish (default: `60`)
-- `pipeline.group_translate_max_segments`: max segments per sub-group in Run E main translate (default: `4`)
+- `pipeline.run_e_scheme`: Run F scheme — `"full"` | `"main_led"` | `"local_led"` | `"draft_first"` (default: `"full"`). See **Run F schemes** above.
+- `pipeline.local_polish_chunk_size`: lines per chunk for Run F local_polish (default: `60`)
+- `pipeline.group_translate_max_segments`: max segments per sub-group in Run F main translate (default: `4`)
 - `pipeline.isolate_heavy_requests`: when `true`, heavy requests (over token/lines/segments thresholds) run in a one-shot subprocess to avoid OOM killing the main process (default: `true`)
 - `pipeline.isolate_heavy_timeout_sec`: timeout in seconds for the isolated worker (default: `600`)
-- `pipeline.strip_punctuation`: when `true`, strip punctuation on Run E final output (default: `true`)
+- `pipeline.strip_punctuation`: when `true`, strip punctuation on Run F final output (default: `true`)
 - `pipeline.strip_punctuation_keep_decimal`: when `true`, protect decimals like `3.14` from being split (default: `true`)
 - `pipeline.strip_punctuation_keep_acronym`: when `true`, protect acronyms like `U.S.` from being split (default: `true`)
 
@@ -324,7 +324,7 @@ Prompts are designed to follow each model family’s **official** chat format an
 - **Mistral / Llama 2 (e.g. Breeze, Llama-Breeze2)**: `[INST]`-style; system prompt is prepended to the first `[INST]` block. Used for `local_polish` and `localization` roles with STRICT JSON output where required.
 - **Vision (Moondream, LLaVA)**: Prompts are applied in code per handler; chat format is auto-detected from the vision model filename. Output is always **English** visual description only (no subtitles).
 
-The CSV **notes** column documents which role is “Run A~D all-English” vs “Run E: output target language only” so that custom rows keep the same language boundaries.
+The CSV **notes** column documents which role is “Run A~D all-English” vs “Run F: output target language only” so that custom rows keep the same language boundaries.
 
 ### Model Name Matching
 
@@ -339,7 +339,7 @@ The CSV **notes** column documents which role is “Run A~D all-English” vs �
 | Column | Description | Example |
 |--------|-------------|---------|
 | `model_name` | Substring to match in filename (case-insensitive) | `my-main-model` |
-| `role` | `main` (Run B), `main_group_translate` (Run E group translate), `main_assemble` (Run E legacy), `localization` (Run E phrase suggestions), `local_polish` (Run E batch polish), or `vision` (Run C/D) | `localization` |
+| `role` | `main` (Run B), `main_group_translate` (Run F group translate), `main_assemble` (Run F legacy), `localization` (Run F phrase suggestions), `local_polish` (Run F batch polish), or `vision` (Run C/D) | `localization` |
 | `source_language` | Input language (usually `English`) | `English` |
 | `target_language` | Output language (Locale code: `en`, `zh-TW`, `zh-CN`, `ja-JP`, `es-ES`) | `zh-TW` |
 | `chat_format` | Model's chat template (`chatml`, `llama-3`, `mistral-instruct`, `moondream`, `llava`) | `chatml` |
@@ -355,21 +355,21 @@ Use these placeholders in `user_prompt_template`:
 - `{line}` → Current English subtitle line
 - `{context}` → Full context (Prev-1, Current, Next-1, Visual Hint if available)
 
-**Run E (main_group_translate)** – MAIN translates a group of segments; **input all English**, output target-language; aligned per sub_id:
+**Run F (main_group_translate)** – MAIN translates a group of segments; **input all English**, output target-language; aligned per sub_id:
 - `{target_language}` → Locale code (e.g. zh-TW, ja-JP)
 - `{tl_instruction}` → Instruction **in English** (from first segment PACK or default)
 - `{segments_json}` → JSON array of `{id, en, ms}` per segment (English text)
 
-**Run E (local_polish)** – LOCAL batch-polishes draft lines; **all instructions in English**. Input may be English (translate+polish) or target language (polish only); output is target language:
+**Run F (local_polish)** – LOCAL batch-polishes draft lines; **all instructions in English**. Input may be English (translate+polish) or target language (polish only); output is target language:
 - `{tl_instruction}` → Instruction **in English**
 - `{lines_json}` → JSON array of `{id, text}` (draft text; may be English or target language)
 
-**Run E (localization)** – used only for phrase suggestions (when a line has idiom slots); **all instructions in English**:
+**Run F (localization)** – used only for phrase suggestions (when a line has idiom slots); **all instructions in English**:
 - `{tl_instruction}` → Instruction **in English** from Run B/D PACK
 - `{requests_json}` → Idiom requests (slot, meaning_tl in English, register, max_len) as JSON
 - `{target_language}` → Locale code (e.g. zh-TW, ja-JP)
 
-**Run E (main_assemble)** – legacy Stage4 one-line assembly (MAIN model polishes draft + suggestions):
+**Run F (main_assemble)** – legacy Stage4 one-line assembly (MAIN model polishes draft + suggestions):
 - `{target_language}` → Locale code (e.g. zh-TW, ja-JP, es-ES)
 - `{line_en}` → Original English subtitle line
 - `{ctx_brief}` → Context brief (**English**, from PACK)
@@ -399,8 +399,8 @@ The CSV includes example rows for each role:
 
 1. **`(custom-main-base)`** - Base model example for Run B
 2. **`(custom-main-instruct)`** - Instruct model example for Run B
-3. **`(custom-localization-base)`** - Base model example for Run E
-4. **`(custom-localization-instruct)`** - Instruct model example for Run E
+3. **`(custom-localization-base)`** - Base model example for Run F
+4. **`(custom-localization-instruct)`** - Instruct model example for Run F
 5. **`(custom-vision-base)`** - Base model example for Vision
 6. **`(custom-vision-instruct)`** - Instruct model example for Vision
 
@@ -425,11 +425,11 @@ The CSV includes example rows for each role:
 ### Important Notes
 
 - **Language boundaries**: **Run A–E** (audio, brief, vision, context expansion): prompts and model output must be **English only**. **Run F** (main_group_translate, local_polish, localization, main_assemble): prompts are in **English**; only the **output** (translated lines, phrase suggestions) is in the target language. Do not put target-language instructions (e.g. Chinese or Japanese) into Run F prompts—use English (e.g. “Output ONLY the translated subtitle in the target language (locale: zh-TW).”) so that prompt language never mixes with output language.
-- **Prompt language**: For Run B/C/D use English-only prompts; for Run E use English instructions and expect target-language output from the model.
+- **Prompt language**: For Run B/C/D use English-only prompts; for Run F use English instructions and expect target-language output from the model.
 - **Chat format**: Must match your model's chat template. Wrong format can cause poor output or errors.
   - **For vision models**: The chat format is automatically detected by `LocalVisionModel` based on the model filename. The CSV `chat_format` field is mainly for documentation purposes.
 - **Placeholders**: Always use the exact placeholder names (`{line}`, `{context}`, `{target_language}`, etc.). They are replaced automatically.
-- **Run B/C/D output (brief)**: Must request JSON with `target_language`, `tl_instruction`, `meaning_tl`, `draft_tl`, `idiom_requests`, `ctx_brief`, referents, tone_note, scene_brief — **all brief content in English only** (language-neutral). **One need per stage**: **v1** outputs **`need_vision`** only; **v2** outputs **`need_multi_frame_vision`** only; **v3** outputs **`need_more_context`** only. Optional: `plain_en`, `idiom_flag`, `transliteration_requests`, `omit_sfx`; `notes` may contain PACK for Run E.
+- **Run B/C/D output (brief)**: Must request JSON with `target_language`, `tl_instruction`, `meaning_tl`, `draft_tl`, `idiom_requests`, `ctx_brief`, referents, tone_note, scene_brief — **all brief content in English only** (language-neutral). **One need per stage**: **v1** outputs **`need_vision`** only; **v2** outputs **`need_multi_frame_vision`** only; **v3** outputs **`need_more_context`** only. Optional: `plain_en`, `idiom_flag`, `transliteration_requests`, `omit_sfx`; `notes` may contain PACK for Run F.
 
 ---
 

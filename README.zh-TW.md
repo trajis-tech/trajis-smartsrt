@@ -68,9 +68,9 @@
 
 **Prompt 角色**（`model_prompts.csv`）：MAIN（main_group_translate）專注**原文（SOURCE）**；強在地化（如 Llama-Breeze2-8B）專注**目標語**、自然化／潤飾；弱在地化（如 Breeze-7B、custom-localization）使用 **STRICT** 格式；解析失敗時以 `raw_decode` 取第一個 `{...}`。
 
-**音譯**：需在目標語音譯的人名或專有名詞由**在地化模型**負責；**主模型**（Run B）在 PACK 中以 `transliteration_requests`（字串陣列）提出。Run E Phase2（local_polish）會收到這些詞並在 polish prompt 中附加「Transliterate (音譯) in target language for these terms: …」，由 LOCAL 輸出音譯形式。
+**音譯**：需在目標語音譯的人名或專有名詞由**在地化模型**負責；**主模型**（Run B）在 PACK 中以 `transliteration_requests`（字串陣列）提出。Run F Phase2（local_polish）會收到這些詞並在 polish prompt 中附加「Transliterate (音譯) in target language for these terms: …」，由 LOCAL 輸出音譯形式。
 
-**CC／狀聲詞**：**主模型**（Run B）篩掉音效與狀聲詞（如 `[laughter]`、`[sigh]`、`*gasps*`）。可設 `omit_sfx: true` 且 `draft_tl` 為空（僅 SFX 的句）；對白＋SFX 時 `draft_tl` 僅含對白。Run E 在建好 draft_map 後套用 omit_sfx，該類句輸出為空。
+**CC／狀聲詞**：**主模型**（Run B）篩掉音效與狀聲詞（如 `[laughter]`、`[sigh]`、`*gasps*`）。可設 `omit_sfx: true` 且 `draft_tl` 為空（僅 SFX 的句）；對白＋SFX 時 `draft_tl` 僅含對白。Run F 在建好 draft_map 後套用 omit_sfx，該類句輸出為空。
 
 **Run F 設定**（`config.py`）：`run_e_scheme`（UI：Run F scheme）、`group_translate_max_segments`（預設 4）、`local_polish_chunk_size`（預設 60）、`strip_punctuation`、`strip_punctuation_keep_decimal`、`strip_punctuation_keep_acronym`。
 
@@ -143,7 +143,7 @@ Gradio 內建的 **Video** 元件需要外部 **`ffmpeg`** 執行檔才能進行
 ```
 models/
   main/     ← 主推理模型（Run B）；一個或多個 .gguf 檔案
-  local/    ← 在地化／翻譯模型（Run E）；一個或多個 .gguf 檔案
+  local/    ← 在地化／翻譯模型（Run F）；一個或多個 .gguf 檔案
   vision/   ← 選用視覺模型（Run C/D）；主 .gguf + mmproj .gguf
   audio/    ← Run A 音訊模型（由安裝腳本或首次執行時下載）
 ```
@@ -188,12 +188,12 @@ models/
 - `vision.enabled`：選用視覺 fallback
 - `pipeline.n_frames`：多張影像視覺的幀數（預設：`3`）
 - `pipeline.work_dir`：中間結果目錄（預設：`./work/`）
-- `pipeline.run_e_scheme`：Run E 方案 — `"full"` | `"main_led"` | `"local_led"` | `"draft_first"`（預設：`"full"`）。詳見上方 **Run E 方案**。
-- `pipeline.local_polish_chunk_size`：Run E local_polish 每批行數（預設：`60`）
-- `pipeline.group_translate_max_segments`：Run E 主翻譯每子群組最大段數（預設：`4`）
+- `pipeline.run_e_scheme`：Run F 方案 — `"full"` | `"main_led"` | `"local_led"` | `"draft_first"`（預設：`"full"`）。詳見上方 **Run F 方案**。
+- `pipeline.local_polish_chunk_size`：Run F local_polish 每批行數（預設：`60`）
+- `pipeline.group_translate_max_segments`：Run F 主翻譯每子群組最大段數（預設：`4`）
 - `pipeline.isolate_heavy_requests`：為 `true` 時，過重的請求（超過 token/行數/段數閾值）改以 one-shot 子行程執行，避免 OOM 拖死主程式（預設：`true`）
 - `pipeline.isolate_heavy_timeout_sec`：隔離子行程逾時秒數（預設：`600`）
-- `pipeline.strip_punctuation`：為 `true` 時，在 Run E 最終輸出時去除標點（預設：`true`）
+- `pipeline.strip_punctuation`：為 `true` 時，在 Run F 最終輸出時去除標點（預設：`true`）
 - `pipeline.strip_punctuation_keep_decimal`：為 `true` 時，保護小數如 `3.14` 不被拆開（預設：`true`）
 - `pipeline.strip_punctuation_keep_acronym`：為 `true` 時，保護縮寫如 `U.S.` 不被拆開（預設：`true`）
 
@@ -261,7 +261,7 @@ models/
 - **Mistral / Llama 2（如 Breeze、Llama-Breeze2）**：`[INST]` 風格；system prompt 會接在第一個 `[INST]` 前。用於 `local_polish`、`localization` 角色，必要時採 STRICT JSON 輸出。
 - **Vision（Moondream、LLaVA）**：提示詞在程式內依 handler 套用；聊天格式依視覺模型檔名自動偵測。輸出一律為**英文**視覺描述（不產出字幕）。
 
-CSV 的 **notes** 欄會標註該角色屬「Run A~D 全英文」或「Run E：僅輸出為目標語」，自訂列請維持相同語言邊界。
+CSV 的 **notes** 欄會標註該角色屬「Run A~D 全英文」或「Run F：僅輸出為目標語」，自訂列請維持相同語言邊界。
 
 ### 模型名稱匹配
 
@@ -276,7 +276,7 @@ CSV 的 **notes** 欄會標註該角色屬「Run A~D 全英文」或「Run E：�
 | 欄位 | 說明 | 範例 |
 |--------|-------------|---------|
 | `model_name` | 在檔名中匹配的子字串（不分大小寫） | `my-main-model` |
-| `role` | `main`（Run B）、`main_group_translate`（Run E 群組翻譯）、`main_assemble`（Run E 舊版組裝）、`localization`（Run E 片語建議）、`local_polish`（Run E 批次順口化）或 `vision`（Run C/D） | `localization` |
+| `role` | `main`（Run B）、`main_group_translate`（Run F 群組翻譯）、`main_assemble`（Run F 舊版組裝）、`localization`（Run F 片語建議）、`local_polish`（Run F 批次順口化）或 `vision`（Run C/D） | `localization` |
 | `source_language` | 輸入語言（通常是 `English`） | `English` |
 | `target_language` | 輸出語言（語言代碼：`en`、`zh-TW`、`zh-CN`、`ja-JP`、`es-ES`） | `zh-TW` |
 | `chat_format` | 模型的聊天模板（`chatml`、`llama-3`、`mistral-instruct`、`moondream`） | `chatml` |
@@ -292,21 +292,21 @@ CSV 的 **notes** 欄會標註該角色屬「Run A~D 全英文」或「Run E：�
 - `{line}` → 當前英文字幕行
 - `{context}` → 完整上下文（Prev-1、Current、Next-1、視覺提示（如有））
 
-**Run E（main_group_translate）** – MAIN 一次翻譯整組字幕；輸出依 sub_id 對齊：
+**Run F（main_group_translate）** – MAIN 一次翻譯整組字幕；輸出依 sub_id 對齊：
 - `{target_language}` → 語言代碼（如 zh-TW、ja-JP）
 - `{tl_instruction}` → 目標語言指令（取自首段 PACK 或程式產生）
 - `{segments_json}` → 每段 `{id, en, ms}` 的 JSON 陣列
 
-**Run E（local_polish）** – LOCAL 批次順口化所有草稿（僅目標語；輸入不含英文）：
+**Run F（local_polish）** – LOCAL 批次順口化所有草稿（僅目標語；輸入不含英文）：
 - `{tl_instruction}` → 目標語言指令
 - `{lines_json}` → `{id, text}` 的 JSON 陣列（目標語草稿）
 
-**Run E（localization）** – 僅用於片語建議（當該句有 idiom 槽位時）：
+**Run F（localization）** – 僅用於片語建議（當該句有 idiom 槽位時）：
 - `{tl_instruction}` → Run B/D PACK 中的目標語言指令
 - `{requests_json}` → 片語請求（slot、meaning_tl、register、max_len）的 JSON
 - `{target_language}` → 語言代碼（如 zh-TW、ja-JP）
 
-**Run E（main_assemble）** – 舊版 Stage4 單行組裝（主模型潤飾 draft + 片語建議）：
+**Run F（main_assemble）** – 舊版 Stage4 單行組裝（主模型潤飾 draft + 片語建議）：
 - `{target_language}` → 語言代碼（如 zh-TW、ja-JP、es-ES）
 - `{line_en}` → 原始英文字幕行
 - `{ctx_brief}` → 上下文摘要（**英文**，來自 PACK）
@@ -336,8 +336,8 @@ CSV 包含每個角色的範例行：
 
 1. **`(custom-main-base)`** - Run B 的 Base 模型範例
 2. **`(custom-main-instruct)`** - Run B 的 Instruct 模型範例
-3. **`(custom-localization-base)`** - Run E 的 Base 模型範例
-4. **`(custom-localization-instruct)`** - Run E 的 Instruct 模型範例
+3. **`(custom-localization-base)`** - Run F 的 Base 模型範例
+4. **`(custom-localization-instruct)`** - Run F 的 Instruct 模型範例
 5. **`(custom-vision-base)`** - Vision 的 Base 模型範例
 6. **`(custom-vision-instruct)`** - Vision 的 Instruct 模型範例
 
@@ -360,7 +360,7 @@ CSV 包含每個角色的範例行：
 
 ### 重要注意事項
 
-- **語言邊界**：**Run A–D**（音訊、brief v1/v2/v3、視覺）：prompt 與模型輸出必須**僅限英文**。**Run E**（main_group_translate、local_polish、localization、main_assemble）：prompt 為**英文**；僅**輸出**（翻譯句、片語建議）為目標語。請勿在 Run E 的 prompt 中寫入目標語指令（例如中文或日文）— 請使用英文（例如「Output ONLY the translated subtitle in the target language (locale: zh-TW).」），以免 prompt 與輸出語言混用。
+- **語言邊界**：**Run A–D**（音訊、brief v1/v2/v3、視覺）：prompt 與模型輸出必須**僅限英文**。**Run F**（main_group_translate、local_polish、localization、main_assemble）：prompt 為**英文**；僅**輸出**（翻譯句、片語建議）為目標語。請勿在 Run F 的 prompt 中寫入目標語指令（例如中文或日文）— 請使用英文（例如「Output ONLY the translated subtitle in the target language (locale: zh-TW).」），以免 prompt 與輸出語言混用。
 - **提示詞語言**：Run B/C/D 使用僅限英文的 prompt；Run F 使用英文指令，預期模型輸出為目標語。
 - **聊天格式**：必須匹配您模型的聊天模板。錯誤的格式可能導致輸出不佳或錯誤。
   - **視覺模型**：聊天格式由 `LocalVisionModel` 依模型檔名自動偵測。CSV 的 `chat_format` 欄位僅供說明。

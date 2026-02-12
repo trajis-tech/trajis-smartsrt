@@ -143,7 +143,7 @@ Video コンポーネントを使用している古い zip を使用している
 ```
 models/
   main/     ← メイン推論モデル（Run B）；1つ以上の .gguf ファイル
-  local/    ← ローカライゼーション/翻訳モデル（Run E）；1つ以上の .gguf ファイル
+  local/    ← ローカライゼーション/翻訳モデル（Run F）；1つ以上の .gguf ファイル
   vision/   ← オプション視覚モデル（Run C/D）；メイン .gguf + mmproj .gguf
   audio/    ← Run A 音声モデル（インストールスクリプトまたは初回実行時にダウンロード）
 ```
@@ -189,11 +189,11 @@ models/
 - `pipeline.n_frames`：マルチフレーム視覚のフレーム数（デフォルト：`3`）
 - `pipeline.work_dir`：中間結果ディレクトリ（デフォルト：`./work/`）
 - `pipeline.run_e_scheme`：Run F スキーム — `"full"` | `"main_led"` | `"local_led"` | `"draft_first"`（デフォルト：`"full"`）。上記 **Run F スキーム** を参照。
-- `pipeline.local_polish_chunk_size`：Run E local_polish の 1 チャンク行数（デフォルト：`60`）
-- `pipeline.group_translate_max_segments`：Run E メイン翻訳のサブグループ最大セグメント数（デフォルト：`4`）
+- `pipeline.local_polish_chunk_size`：Run F local_polish の 1 チャンク行数（デフォルト：`60`）
+- `pipeline.group_translate_max_segments`：Run F メイン翻訳のサブグループ最大セグメント数（デフォルト：`4`）
 - `pipeline.isolate_heavy_requests`：`true` の場合、heavy リクエスト（token/行数/セグメントが閾値超過）は one-shot サブプロセスで実行し OOM でメインプロセスが落ちるのを防ぐ（デフォルト：`true`）
 - `pipeline.isolate_heavy_timeout_sec`：隔離ワーカーのタイムアウト秒（デフォルト：`600`）
-- `pipeline.strip_punctuation`：`true` の場合、Run E 最終出力で句読点を除去（デフォルト：`true`）
+- `pipeline.strip_punctuation`：`true` の場合、Run F 最終出力で句読点を除去（デフォルト：`true`）
 - `pipeline.strip_punctuation_keep_decimal`：`true` の場合、`3.14` などの小数を保護（デフォルト：`true`）
 - `pipeline.strip_punctuation_keep_acronym`：`true` の場合、`U.S.` などの略語を保護（デフォルト：`true`）
 
@@ -260,7 +260,7 @@ models/
 - **Mistral / Llama 2（例：Breeze、Llama-Breeze2）**：`[INST]` スタイル；system prompt は最初の `[INST]` ブロック前に付加。`local_polish`・`localization` ロールで使用；必要に応じて STRICT JSON 出力。
 - **Vision（Moondream、LLaVA）**：プロンプトはコード内でハンドラごとに適用；チャット形式は視覚モデルのファイル名から自動検出。出力は常に**英語**の視覚説明のみ（字幕は出さない）。
 
-CSV の **notes** 列で、そのロールが「Run A~D はすべて英語」か「Run E：出力は目標言語のみ」かを記載し、カスタム行でも同じ言語境界を保つ。
+CSV の **notes** 列で、そのロールが「Run A~D はすべて英語」か「Run F：出力は目標言語のみ」かを記載し、カスタム行でも同じ言語境界を保つ。
 
 ### モデル名マッチング
 
@@ -275,7 +275,7 @@ CSV の **notes** 列で、そのロールが「Run A~D はすべて英語」か
 | 列 | 説明 | 例 |
 |--------|-------------|---------|
 | `model_name` | ファイル名でマッチする部分文字列（大文字小文字を区別しない） | `my-main-model` |
-| `role` | `main`（Run B）、`main_assemble`（Run E Stage4 組立て）、`localization`（Run E）、または `vision`（Run C/D） | `localization` |
+| `role` | `main`（Run B）、`main_assemble`（Run F Stage4 組立て）、`localization`（Run F）、または `vision`（Run C/D） | `localization` |
 | `source_language` | 入力言語（通常は `English`） | `English` |
 | `target_language` | 出力言語（ロケールコード：`en`、`zh-TW`、`zh-CN`、`ja-JP`、`es-ES`） | `zh-TW` |
 | `chat_format` | モデルのチャットテンプレート（`chatml`、`llama-3`、`mistral-instruct`、`moondream`） | `chatml` |
@@ -291,10 +291,10 @@ CSV の **notes** 列で、そのロールが「Run A~D はすべて英語」か
 - `{line}` → 現在の英文字幕行
 - `{context}` → 完全なコンテキスト（Prev-1、Current、Next-1、Prev-More、Next-More、Visual Hint）
 
-**Run E（localization）プレースホルダー：**
+**Run F（localization）プレースホルダー：**
 - `{tl_instruction}`、`{requests_json}`、`{target_language}`（フレーズ提案用）
 
-**Run E（main_assemble）** – Stage4 一行組立て：
+**Run F（main_assemble）** – Stage4 一行組立て：
 - `{target_language}`、`{line_en}`、`{ctx_brief}`、`{draft_prefilled}`、`{suggestions_json}`
 
 **Run C/D（vision）プレースホルダー：**
@@ -337,8 +337,8 @@ CSV には各役割の例行が含まれています：
 
 1. **`(custom-main-base)`** - Run B の Base モデル例
 2. **`(custom-main-instruct)`** - Run B の Instruct モデル例
-3. **`(custom-localization-base)`** - Run E の Base モデル例
-4. **`(custom-localization-instruct)`** - Run E の Instruct モデル例
+3. **`(custom-localization-base)`** - Run F の Base モデル例
+4. **`(custom-localization-instruct)`** - Run F の Instruct モデル例
 5. **`(custom-vision-base)`** - Vision の Base モデル例
 6. **`(custom-vision-instruct)`** - Vision の Instruct モデル例
 
@@ -369,12 +369,12 @@ CSV には各役割の例行が含まれています：
 
 ### 重要な注意事項
 
-- **言語境界**：**Run A–D**（音声、brief v1/v2/v3、視覚）：プロンプトとモデル出力は **英語のみ** にすること。**Run E**（main_group_translate、local_polish、localization、main_assemble）：プロンプトは**英語**；**出力**（翻訳行、フレーズ提案）のみが目標言語。Run E のプロンプトに目標言語の指示（例：中国語や日本語）を書かないこと— 英語で書く（例：「Output ONLY the translated subtitle in the target language (locale: zh-TW).」）。プロンプト言語と出力言語を混在させない。
-- **プロンプト言語**：Run B/C/D は英語のみのプロンプト；Run E は英語の指示を使い、モデル出力は目標言語を想定。
+- **言語境界**：**Run A–D**（音声、brief v1/v2/v3、視覚）：プロンプトとモデル出力は **英語のみ** にすること。**Run F**（main_group_translate、local_polish、localization、main_assemble）：プロンプトは**英語**；**出力**（翻訳行、フレーズ提案）のみが目標言語。Run F のプロンプトに目標言語の指示（例：中国語や日本語）を書かないこと— 英語で書く（例：「Output ONLY the translated subtitle in the target language (locale: zh-TW).」）。プロンプト言語と出力言語を混在させない。
+- **プロンプト言語**：Run B/C/D は英語のみのプロンプト；Run F は英語の指示を使い、モデル出力は目標言語を想定。
 - **チャット形式**：モデルのチャットテンプレートに一致する必要があります。間違った形式は、出力不良やエラーを引き起こす可能性があります。
   - **視覚モデル**：チャット形式は `LocalVisionModel` がモデルファイル名から自動検出します。CSV の `chat_format` 列は主にドキュメント用です。
 - **プレースホルダー**：常に正確なプレースホルダー名（`{line}`、`{context}`、`{target_language}` など）を使用してください。これらは自動的に置き換えられます。
-- **Run B/C/D 出力（brief）**：JSON で `target_language`、`tl_instruction`、`meaning_tl`、`draft_tl`、`idiom_requests`、`ctx_brief`、referents、tone_note、scene_brief — **すべて英語のみ**（言語中立）を要求。**段階ごとに need は 1 つのみ**：**v1** は **`need_vision`** のみ；**v2** は **`need_multi_frame_vision`** のみ；**v3** は **`need_more_context`** のみ。任意で `plain_en`、`idiom_flag`、`transliteration_requests`、`omit_sfx`；`notes` に Run E 用 PACK を含めてよい。
+- **Run B/C/D 出力（brief）**：JSON で `target_language`、`tl_instruction`、`meaning_tl`、`draft_tl`、`idiom_requests`、`ctx_brief`、referents、tone_note、scene_brief — **すべて英語のみ**（言語中立）を要求。**段階ごとに need は 1 つのみ**：**v1** は **`need_vision`** のみ；**v2** は **`need_multi_frame_vision`** のみ；**v3** は **`need_more_context`** のみ。任意で `plain_en`、`idiom_flag`、`transliteration_requests`、`omit_sfx`；`notes` に Run F 用 PACK を含めてよい。
 
 ---
 
