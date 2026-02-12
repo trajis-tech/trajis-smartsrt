@@ -21,6 +21,7 @@ Trajis SmartSRT runs a local subtitle translation pipeline using llama-cpp-pytho
 
 ---
 
+
 ## Translation Pipeline Overview
 
 The translation pipeline is split into **6 runs** (A→B→C/D→E→F), executed sequentially. **Single brief**: one current file `./work/brief_work.jsonl` is updated each stage; before C/D/E/F the current brief is copied to `brief_v1.jsonl` / `brief_v2.jsonl` / `brief_v3.jsonl` / `brief_v4.jsonl` (snapshots).
@@ -62,9 +63,9 @@ In the UI, select the scheme from the **Run F scheme** dropdown. Options: `full`
 | Scheme | When to use (主／地) | Phase1 (draft source) | Phase2 (polish) |
 |--------|---------------------|------------------------|-----------------|
 | **Full** | 主強、地強 | MAIN group translate → draft_map | LOCAL polish |
-| **MAIN-led** | 主強、地弱 | MAIN group translate → draft_map | none |
-| **LOCAL-led** | 主弱、地強 | PACK draft_tl → draft_map; optional LOCAL fill idiom slots | LOCAL polish |
-| **Draft-first** | 主弱、地弱 | PACK draft_tl → draft_map; optional LOCAL fill idiom slots | none |
+| **MAIN-led** | main strong, local weak | MAIN group translate → draft_map | none |
+| **LOCAL-led** | main weak, local strong | PACK draft_tl → draft_map; optional LOCAL fill idiom slots | LOCAL polish |
+| **Draft-first** | main weak, local weak | PACK draft_tl → draft_map; optional LOCAL fill idiom slots | none |
 
 - **Full**: Phase 1 — load MAIN (reason), build sentence groups (`build_sentence_groups`), split by `group_translate_max_segments` (default 4). For each chunk call `stage_main_group_translate`; **partial MAIN output is accepted** (match by **id** only; missing segments use PACK draft_tl or en_text). If MAIN returns nothing usable, use `safe_fallback_split`. Phase 2 — load LOCAL, `local_polish` in chunks (`local_polish_chunk_size`, default 60); only keys from the request and passing length/pollution checks are applied to draft_map. Final: glossary + strip_punctuation → `translated_text`.
 - **MAIN-led**: Phase 1 — same as Full (MAIN group translate → draft_map). Phase 2 — **skipped**. Final: glossary + strip_punctuation.
