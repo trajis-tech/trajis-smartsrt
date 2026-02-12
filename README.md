@@ -60,9 +60,9 @@ The translation pipeline is split into **6 runs** (A→B→C/D→E→F), execute
 
 In the UI, select the scheme from the **Run F scheme** dropdown. Options: `full` | `main_led` | `local_led` | `draft_first` (invalid value falls back to `full`).
 
-| Scheme | When to use (主／地) | Phase1 (draft source) | Phase2 (polish) |
+| Scheme | When to use (main／local) | Phase1 (draft source) | Phase2 (polish) |
 |--------|---------------------|------------------------|-----------------|
-| **Full** | 主強、地強 | MAIN group translate → draft_map | LOCAL polish |
+| **Full** | main strong, local strong | MAIN group translate → draft_map | LOCAL polish |
 | **MAIN-led** | main strong, local weak | MAIN group translate → draft_map | none |
 | **LOCAL-led** | main weak, local strong | PACK draft_tl → draft_map; optional LOCAL fill idiom slots | LOCAL polish |
 | **Draft-first** | main weak, local weak | PACK draft_tl → draft_map; optional LOCAL fill idiom slots | none |
