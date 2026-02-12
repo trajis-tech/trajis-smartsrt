@@ -16,6 +16,9 @@ Trajis SmartSRT runs a local subtitle translation pipeline using llama-cpp-pytho
 
 ❗ **Models are NOT auto-downloaded.** You download GGUF files manually and place them into `./models/`.
 
+![trajis-smartsrt-1 0 0-1](https://github.com/user-attachments/assets/b5376104-e259-4ded-9116-392d626fe29a)
+![trajis-smartsrt-1 0 0-2](https://github.com/user-attachments/assets/6e6a34a8-ea7c-4145-bb1d-70be389b7b29)
+
 ---
 
 ## Translation Pipeline Overview
